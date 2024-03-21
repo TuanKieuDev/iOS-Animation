@@ -82,20 +82,175 @@ class ViewController: UIViewController {
     label.textColor = UIColor(red: 0.89, green: 0.38, blue: 0.0, alpha: 1.0)
     label.textAlignment = .center
     status.addSubview(label)
+    
+    statusPosition = status.center
   }
   
   override func viewWillAppear(_ animated: Bool) {
     super.viewWillAppear(animated)
+    
+    heading.center.x  -= view.bounds.width
+    username.center.x -= view.bounds.width
+    password.center.x -= view.bounds.width
+    
+    cloud1.alpha = 0
+    cloud2.alpha = 0
+    cloud3.alpha = 0
+    cloud4.alpha = 0
+    
+    loginButton.center.y += 30.0
+    loginButton.alpha = 0.0
   }
   
   override func viewDidAppear(_ animated: Bool) {
     super.viewDidAppear(animated)
+    
+    UIView.animate(withDuration: 1) {
+      self.heading.center.x += self.view.bounds.width
+    }
+    
+    UIView.animate(withDuration: 0.5, delay: 0.3,
+                   usingSpringWithDamping: 0.9, initialSpringVelocity: 0.0,
+                   options: [],
+                   animations: {
+      self.username.center.x += self.view.bounds.width
+    }, completion: nil)
+    
+    UIView.animate(withDuration: 0.5, delay: 0.4,
+                   usingSpringWithDamping: 0.9, initialSpringVelocity: 0.0,
+                   options: [],
+                   animations: {
+      self.password.center.x += self.view.bounds.width
+    }, completion: nil)
+    
+    UIView.animate(withDuration: 0.5, delay: 0.5) {
+      self.cloud1.alpha = 1
+    }
+    
+    UIView.animate(withDuration: 0.5, delay: 0.7) {
+      self.cloud2.alpha = 1
+    }
+    
+    UIView.animate(withDuration: 0.5, delay: 0.9) {
+      self.cloud3.alpha = 1
+    }
+    
+    UIView.animate(withDuration: 0.5, delay: 1.1) {
+      self.cloud4.alpha = 1
+    }
+    
+    UIView.animate(withDuration: 0.5, delay: 0.5,
+                   usingSpringWithDamping: 0.5, initialSpringVelocity: 0.0,
+                   options: [], animations: {
+      self.loginButton.center.y -= 30.0
+      self.loginButton.alpha = 1.0
+    }, completion: nil)
+    
+    animateCloud(cloud1)
+    animateCloud(cloud2)
+    animateCloud(cloud3)
+    animateCloud(cloud4)
   }
+  
+  func showMessage(index: Int) {
+    label.text = messages[index]
+    UIView.transition(with: status, duration: 0.33,
+                      options: [.curveEaseOut, .transitionFlipFromBottom],
+                      animations: {
+                          self.status.isHidden = false
+                      },
+                      completion: { _ in
+                        delay(2.0) {
+                          if index < self.messages.count - 1 {
+                            self.removeMessage(index: index)
+                          } else {
+                            self.resetForm()
+                          }
+                        }
+                      }
+    )
+  }
+  
+  func removeMessage(index: Int) {
+    UIView.animate(withDuration: 0.33, delay: 0.0, options: [],
+      animations: {
+        self.status.center.x += self.view.frame.size.width
+      },
+      completion: { _ in
+        self.status.isHidden = true
+        self.status.center = self.statusPosition
+        self.showMessage(index: index + 1)
+      }
+    )
+  }
+  
+  
+  func resetForm() {
+    UIView.transition(with: status, duration: 0.2,
+                      options: [.curveEaseOut, .transitionFlipFromTop],
+                      animations: {
+                          self.status.isHidden = true
+                          self.statusPosition = self.status.center
+                      },
+                      completion: { _ in
+                        // nothing
+                      }
+    )
+    
+    UIView.animate(withDuration: 0.33, delay: 0.0) {
+      self.spinner.center = CGPoint(x: -20, y: 16)
+      self.spinner.alpha = 0.0
+      self.loginButton.backgroundColor = UIColor(red: 0.63, green: 0.84, blue: 0.35, alpha: 1.0)
+      self.loginButton.bounds.size.width -= 80
+      self.loginButton.center.y -= 60
+    }
+  }
+  
+  func animateCloud(_ cloud: UIImageView) {
+    let cloudSpeed = 60 / view.frame.size.width
+    let duration = (view.frame.size.width - cloud.frame.origin.x) * cloudSpeed
+    
+    UIView.animate(withDuration: TimeInterval(duration), delay: 0.0,
+                   options: .curveLinear,
+                   animations: {
+                      cloud.frame.origin.x = self.view.frame.size.width
+                    },
+                   completion: { _ in
+                      cloud.frame.origin.x = -cloud.frame.size.width
+                      self.animateCloud(cloud)
+                    }
+    )
+  }
+  
   
   // MARK: further methods
   
   @IBAction func login() {
     view.endEditing(true)
+    
+    UIView.animate(withDuration: 1.5, delay: 0.0,
+                   usingSpringWithDamping: 0.2, initialSpringVelocity: 0.0,
+                   options: [], animations: {
+                      self.loginButton.bounds.size.width += 80.0 //increase button's width by 80
+                   },
+                   completion: { _ in
+                     self.showMessage(index: 0)
+                   }
+    )
+    
+    UIView.animate(withDuration: 0.33, delay: 0.0,
+                   usingSpringWithDamping: 0.7, initialSpringVelocity: 0.0,
+                   options: [],
+                   animations: {
+      self.loginButton.center.y += 60.0 // increase button's vertical position by 60
+      self.loginButton.backgroundColor =
+      UIColor(red: 0.85, green: 0.83, blue: 0.45, alpha: 1.0)
+      self.spinner.center = CGPoint(
+        x: 40.0,
+        y: self.loginButton.frame.size.height/2
+      )
+      self.spinner.alpha = 1.0
+    }, completion: nil)
   }
   
   // MARK: UITextFieldDelegate
