@@ -38,19 +38,39 @@ func delay(seconds: Double, completion: @escaping () -> Void) {
 }
 
 func tintBackgroundColor(layer: CALayer, toColor: UIColor) {
-  let tint = CABasicAnimation(keyPath: "backgroundColor")
+//  let tint = CABasicAnimation(keyPath: "backgroundColor")
+//  tint.fromValue = layer.backgroundColor
+//  tint.toValue = toColor.cgColor
+//  tint.duration = 0.5
+//  layer.add(tint, forKey: nil)
+//  layer.backgroundColor = toColor.cgColor
+  
+  // using CASpringAnimation
+  let tint = CASpringAnimation(keyPath: "backgroundColor")
+  tint.damping = 5.0
+  tint.initialVelocity = -10.0
   tint.fromValue = layer.backgroundColor
   tint.toValue = toColor.cgColor
-  tint.duration = 0.5
+  tint.duration = tint.settlingDuration
   layer.add(tint, forKey: nil)
   layer.backgroundColor = toColor.cgColor
 }
 
 func roundCorners(layer: CALayer, toRadius: CGFloat) {
-  let round = CABasicAnimation(keyPath: "cornerRadius")
+//  let round = CABasicAnimation(keyPath: "cornerRadius")
+//  round.fromValue = layer.cornerRadius
+//  round.toValue = toRadius
+//  round.duration = 0.5
+//  layer.add(round, forKey: nil)
+//  layer.cornerRadius = toRadius
+  
+  // using CASpringAnimation
+  let round = CASpringAnimation(keyPath: "cornerRadius")
+  round.damping = 7.0
+  round.stiffness = 200.0
   round.fromValue = layer.cornerRadius
   round.toValue = toRadius
-  round.duration = 0.5
+  round.duration = round.settlingDuration
   layer.add(round, forKey: nil)
   layer.cornerRadius = toRadius
 }
@@ -273,6 +293,13 @@ class ViewController: UIViewController {
       },
       completion: nil
     )
+    
+    let wobble = CAKeyframeAnimation(keyPath: "transform.rotation")
+    wobble.duration = 0.25
+    wobble.repeatCount = 4
+    wobble.values = [0.0, -.pi / 4.0, 0.0, .pi / 4.0, 0.0]
+    wobble.keyTimes = [0.0, 0.25, 0.5, 0.75, 1.0]
+    heading.layer.add(wobble, forKey: nil)
   }
 
   // MARK: further methods
@@ -309,6 +336,23 @@ class ViewController: UIViewController {
     let tintColor = UIColor(red: 0.85, green: 0.83, blue: 0.45, alpha: 1.0)
     tintBackgroundColor(layer: loginButton.layer, toColor: tintColor)
     roundCorners(layer: loginButton.layer, toRadius: 25.0)
+    
+    let balloon = CALayer()
+    balloon.contents = UIImage(named: "balloon")?.cgImage
+    balloon.frame = CGRect(x: -50.0, y: 0.0, width: 50.0, height: 65.0)
+    view.layer.insertSublayer(balloon, below: username.layer)
+    
+    let flight = CAKeyframeAnimation(keyPath: "position")
+    flight.duration = 12.0
+    flight.values = [
+      CGPoint(x: -50.0, y: 0.0),
+      CGPoint(x: view.frame.width + 50.0, y: 160.0),
+      CGPoint(x: -50.0, y: loginButton.center.y)
+    ].map { NSValue(cgPoint: $0) }
+    flight.keyTimes = [0.0, 0.5, 1.0]
+    
+    balloon.add(flight, forKey: nil)
+    balloon.position = CGPoint(x: -50.0, y: loginButton.center.y)
   }
 
   func animateCloud(layer: CALayer) {
@@ -350,10 +394,11 @@ extension ViewController: CAAnimationDelegate {
       let layer = anim.value(forKey: "layer") as? CALayer
       anim.setValue(nil, forKey: "layer")
 
-      let pulse = CABasicAnimation(keyPath: "transform.scale")
+      let pulse = CASpringAnimation(keyPath: "transform.scale")
+      pulse.damping = 7.5
       pulse.fromValue = 1.25
       pulse.toValue = 1.0
-      pulse.duration = 0.25
+      pulse.duration = pulse.settlingDuration
       layer?.add(pulse, forKey: nil)
     }
 
@@ -377,5 +422,32 @@ extension ViewController: UITextFieldDelegate {
     }
     print(runningAnimations)
     info.layer.removeAnimation(forKey: "infoappear")
+  }
+  
+  func textFieldDidEndEditing(_ textField: UITextField) {
+    guard let text = textField.text else { return }
+    if text.count < 5 {
+      // add animations here
+      let jump = CASpringAnimation(keyPath: "position.y")
+      jump.initialVelocity = 100.0
+      jump.mass = 10.0
+      jump.stiffness = 1500.0
+      jump.damping = 50.0
+      jump.fromValue = textField.layer.position.y + 1.0
+      jump.toValue = textField.layer.position.y
+      jump.duration = jump.settlingDuration
+      
+      textField.layer.add(jump, forKey: nil)
+      textField.layer.borderWidth = 3.0
+      textField.layer.borderColor = UIColor.clear.cgColor
+      
+      let flash = CASpringAnimation(keyPath: "borderColor")
+      flash.damping = 7.0
+      flash.stiffness = 200.0
+      flash.fromValue = UIColor(red: 1.0, green: 0.27, blue: 0.0, alpha: 1.0).cgColor
+      flash.toValue = UIColor.white.cgColor
+      flash.duration = flash.settlingDuration
+      textField.layer.add(flash, forKey: nil)
+    }
   }
 }
